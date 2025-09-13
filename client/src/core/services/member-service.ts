@@ -5,7 +5,7 @@ import { EditableMember, Member, Photo } from '../../types/member';
 import { tap } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class MemberService {
   private http = inject(HttpClient);
@@ -19,10 +19,10 @@ export class MemberService {
 
   getMember(id: string) {
     return this.http.get<Member>(this.baseUrl + 'members/' + id).pipe(
-      tap(member => {
-        this.member.set(member)
+      tap((member) => {
+        this.member.set(member);
       })
-    )
+    );
   }
 
   getMemberPhotos(id: string) {
@@ -40,7 +40,10 @@ export class MemberService {
   }
 
   setMainPhoto(photo: Photo) {
-    return this.http.put(this.baseUrl + 'members/set-main-photo/' + photo.id, {});
+    return this.http.put(
+      this.baseUrl + 'members/set-main-photo/' + photo.id,
+      {}
+    );
   }
 
   deletePhoto(photoId: number) {
