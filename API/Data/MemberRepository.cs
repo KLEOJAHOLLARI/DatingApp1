@@ -1,5 +1,6 @@
 using System;
 using API.Entities;
+using API.Helpers;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,10 +21,30 @@ public class MemberRepository(AppDbContext context) : IMemberRepository
             .SingleOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<IReadOnlyList<Member>> GetMembersAsync()
+    public async Task<PaginatedResult<Member>> GetMembersAsync(MembersParams membersParams)
     {
-        return await context.Members
-            .ToListAsync();
+        var query = context.Members.AsQueryable();
+
+        query = query.Where(x => x.Id != membersParams.CurrentMemberId);
+
+        if (membersParams.Gender != null)
+        {
+            query = query.Where(x => x.Gender == membersParams.Gender);
+        }
+
+        var minDob = DateOnly.FromDateTime(DateTime.Today.AddYears(-membersParams.MaxAge - 1));
+
+        var maxDob = DateOnly.FromDateTime(DateTime.Today.AddYears(-membersParams.MinAge));
+
+        query = query.Where(x => x.DateOfBirth >= minDob && x.DateOfBirth <= maxDob);
+
+        query = membersParams.OrderBy switch
+        {
+            "created" => query.OrderByDescending(x => x.Created),
+            _ => query.OrderByDescending(x => x.LastActive)
+        };
+
+        return await PaginatedHelper.CreateAsync(query, membersParams.PageNumber, membersParams.PageSize);
     }
 
     public async Task<IReadOnlyList<Photo>> GetPhotosForMemberAsync(string memberId)
