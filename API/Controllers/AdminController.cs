@@ -9,11 +9,13 @@ namespace API.Controllers;
 
 public class AdminController(UserManager<AppUser> userManager) : BaseApiController
 {
-    [Authorize(Policy = "RequireAdminRole")]
+
+    [Authorize(Policy = "RequiredAdminRole")]
     [HttpGet("users-with-roles")]
     public async Task<ActionResult> GetUsersWithRoles()
     {
         var users = await userManager.Users.ToListAsync();
+
         var userList = new List<object>();
 
         foreach (var user in users)
@@ -26,11 +28,10 @@ public class AdminController(UserManager<AppUser> userManager) : BaseApiControll
                 Roles = roles.ToList()
             });
         }
-
         return Ok(userList);
     }
 
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = "RequiredAdminRole")]
     [HttpPost("edit-roles/{userId}")]
     public async Task<ActionResult<IList<string>>> EditRoles(string userId, [FromQuery] string roles)
     {
@@ -40,7 +41,7 @@ public class AdminController(UserManager<AppUser> userManager) : BaseApiControll
 
         var user = await userManager.FindByIdAsync(userId);
 
-        if (user == null) return BadRequest("Could not retrieve user");
+        if (user == null) return BadRequest("could not retrive user");
 
         var userRoles = await userManager.GetRolesAsync(user);
 
@@ -53,13 +54,14 @@ public class AdminController(UserManager<AppUser> userManager) : BaseApiControll
         if (!result.Succeeded) return BadRequest("Failed to remove from roles");
 
         return Ok(await userManager.GetRolesAsync(user));
-
     }
+
+
 
     [Authorize(Policy = "ModeratePhotoRole")]
     [HttpGet("photos-to-moderate")]
     public ActionResult GetPhotosForModeration()
     {
-        return Ok("Admins or moderators can see this");
+        return Ok("Admin or moderatos can see this");
     }
 }
