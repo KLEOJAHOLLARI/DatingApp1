@@ -5,20 +5,23 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ToastService } from '../../core/services/toast-service';
 import { themes } from '../theme';
 import { BusyService } from '../../core/services/busy-service';
+import { HasRole } from '../../shared/directives/has-role';
 
 @Component({
   selector: 'app-nav',
-  imports: [FormsModule, RouterLink, RouterLinkActive],
+  imports: [FormsModule, RouterLink, RouterLinkActive, HasRole],
   templateUrl: './nav.html',
-  styleUrl: './nav.css'
+  styleUrl: './nav.css',
 })
 export class Nav implements OnInit {
   protected accountService = inject(AccountService);
   protected busyService = inject(BusyService);
   private router = inject(Router);
   private toast = inject(ToastService);
-  protected creds: any = {}
-  protected selectedTheme = signal<string>(localStorage.getItem('theme') || 'light');
+  protected creds: any = {};
+  protected selectedTheme = signal<string>(
+    localStorage.getItem('theme') || 'light'
+  );
   protected themes = themes;
 
   ngOnInit(): void {
@@ -40,10 +43,10 @@ export class Nav implements OnInit {
         this.toast.success('Logged in successfully');
         this.creds = {};
       },
-      error: error => {
+      error: (error) => {
         this.toast.error(error.error);
-      }
-    })
+      },
+    });
   }
 
   logout() {
