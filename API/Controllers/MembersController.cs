@@ -91,6 +91,7 @@ namespace API.Controllers
             return BadRequest("Problem adding photo");
         }
 
+
         [HttpPut("set-main-photo/{photoId}")]
         public async Task<ActionResult> SetMainPhoto(int photoId)
         {
