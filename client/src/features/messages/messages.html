@@ -61,7 +61,7 @@
         <td class="w-2/9">{{message.messageSent | date : 'medium'}}</td>
         <td class="w-1/9">
           <button
-            (click)="deleteMessage($event,message.id)"
+            (click)="confirmDelete($event,message.id)"
             class="btn btn-circle btn-ghost text-error"
           >
             <svg

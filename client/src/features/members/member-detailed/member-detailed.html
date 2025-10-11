@@ -1,6 +1,25 @@
 @if (memberService.member(); as member) {
 <div class="flex gap-6">
   <div class="card bg-base-100 flex flex-col h-[85vh] w-1/4">
+    <button
+      (click)="toggleLike($event)"
+      class="absolute top-1 right-1 z-40 btn btn-ghost btn-circle"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        [attr.fill]="hasLiked() ? 'red' : 'none'"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="size-7"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+        />
+      </svg>
+    </button>
     <img
       src="{{member.imageUrl || '/user.png'}}"
       alt="image of member"
@@ -33,8 +52,15 @@
       </ul>
     </div>
     <div class="card-actions justify-between gap-2 px-2 mb-3">
-      <button class="btn btn-info flex-1">Go back</button>
-      <button class="btn btn-primary flex-1">Like user</button>
+      <button routerLink="/members" class="btn btn-info flex-1">Go back</button>
+      <button
+        class="btn flex-1"
+        [class.btn-error]="hasLiked()"
+        [class.btn-success]="!hasLiked()"
+        (click)="likesService.toggleLike(member.id)"
+      >
+        {{hasLiked() ? 'Remove like' : 'Like user'}}
+      </button>
     </div>
   </div>
 

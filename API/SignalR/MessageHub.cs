@@ -1,4 +1,5 @@
 using System;
+using API.Data;
 using API.DTOs;
 using API.Entities;
 using API.Extensions;
@@ -12,8 +13,7 @@ using Microsoft.Extensions.Primitives;
 namespace API.SignalR;
 
 [Authorize]
-public class MessageHub(IMessagesRepository messagesRepository,
-     IMemberRepository memberRepository, IHubContext<PresenceHub> presenceHub) : Hub
+public class MessageHub(IUnitOfWork uow, IHubContext<PresenceHub> presenceHub) : Hub
 
 {
     public override async Task OnConnectedAsync()
@@ -27,16 +27,16 @@ public class MessageHub(IMessagesRepository messagesRepository,
 
         await AddToGroup(groupName);
 
-        var messages = await messagesRepository.GetMessageThread(GetUserId(), otherUser);
+        var messages = await uow.MessagesRepository.GetMessageThread(GetUserId(), otherUser);
 
         await Clients.Group(groupName).SendAsync("ReceiveMessageThread", messages);
     }
 
     public async Task SendMessage(CreateMessageDto createMessageDto)
     {
-        var sender = await memberRepository.GetMemberByIdAsync(GetUserId());
+        var sender = await uow.MemberRepository.GetMemberByIdAsync(GetUserId());
 
-        var recipent = await memberRepository.GetMemberByIdAsync(createMessageDto.RecipientId);
+        var recipent = await uow.MemberRepository.GetMemberByIdAsync(createMessageDto.RecipientId);
 
         if (recipent == null || sender == null || sender.Id == createMessageDto.RecipientId)
             throw new HubException("Cannot send message");
@@ -49,7 +49,7 @@ public class MessageHub(IMessagesRepository messagesRepository,
         };
 
         var groupName = GetGroupName(sender.Id, recipent.Id);
-        var group = await messagesRepository.GetMessageGroup(groupName);
+        var group = await uow.MessagesRepository.GetMessageGroup(groupName);
         var userInGroup = group != null && group.Connections.Any(x => x.UserId == message.RecipientId);
 
         if (userInGroup)
@@ -58,9 +58,9 @@ public class MessageHub(IMessagesRepository messagesRepository,
         }
 
 
-        messagesRepository.AddMessage(message);
+        uow.MessagesRepository.AddMessage(message);
 
-        if (await memberRepository.SaveAllAsync())
+        if (await uow.Complete())
         {
             await Clients.Group(groupName).SendAsync("NewMessage", message.ToDto());
             var connections = await PresenceTracker.GetConnectionForUser(recipent.Id);
@@ -75,24 +75,24 @@ public class MessageHub(IMessagesRepository messagesRepository,
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await messagesRepository.RemoveConnection(Context.ConnectionId);
+        await uow.MessagesRepository.RemoveConnection(Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }
 
     private async Task<bool> AddToGroup(string groupName)
     {
-        var group = await messagesRepository.GetMessageGroup(groupName);
+        var group = await uow.MessagesRepository.GetMessageGroup(groupName);
         var connection = new Connection(Context.ConnectionId, GetUserId());
 
         if (group == null)
         {
             group = new Group(groupName);
-            messagesRepository.AddGroup(group);
+            uow.MessagesRepository.AddGroup(group);
         }
 
         group.Connections.Add(connection);
 
-        return await messagesRepository.SaveAllAsync();
+        return await uow.Complete();
     }
 
 
